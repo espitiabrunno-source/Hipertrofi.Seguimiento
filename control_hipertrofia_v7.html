@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control de Hipertrofia</title>
+<style>
+:root{
+  --bg:#f4f6f8; --card:#fff; --text:#17202a; --muted:#6b7280;
+  --accent:#2563eb; --accent2:#0f766e; --danger:#dc2626; --border:#e5e7eb;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text)}
+header{background:#111827;color:white;padding:28px 18px}
+header .wrap,main{max-width:1100px;margin:auto}
+h1{margin:0 0 7px;font-size:clamp(25px,5vw,38px)}
+header p{margin:0;color:#d1d5db}
+main{padding:20px 14px 50px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:0 4px 15px #00000008}
+h2{font-size:19px;margin:0 0 14px}
+label{display:block;font-size:13px;font-weight:700;margin:10px 0 6px}
+input,select,textarea,button{width:100%;font:inherit;border-radius:10px;border:1px solid #d1d5db;padding:10px 11px;background:white}
+input:focus,select:focus,textarea:focus{outline:2px solid #93c5fd;border-color:var(--accent)}
+.row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+button{cursor:pointer;font-weight:700;border:0;background:var(--accent);color:white}
+button.secondary{background:#374151}
+button.green{background:var(--accent2)}
+button.red{background:var(--danger)}
+.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}
+@media(max-width:600px){.actions{grid-template-columns:1fr}.row3{grid-template-columns:1fr}}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:850px}
+th,td{padding:10px 8px;border-bottom:1px solid var(--border);text-align:left;font-size:13px}
+th{background:#f9fafb;position:sticky;top:0}
+.stat{font-size:28px;font-weight:800;margin-top:3px}
+.muted{color:var(--muted);font-size:13px}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:700}
+canvas{width:100%;height:280px;border:1px solid var(--border);border-radius:12px;background:white}
+.empty{text-align:center;padding:28px;color:var(--muted)}
+small{color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Control de Hipertrofia</h1>
+    <p>Registra series, repeticiones, peso y RIR para comprobar tu progreso.</p>
+  </div>
+</header>
+
+<main>
+  <div class="grid">
+    <section class="card">
+      <h2>Registrar entrenamiento</h2>
+      <label>Fecha</label><input id="date" type="date">
+      <label>Día / sesión</label>
+      <select id="day">
+        <option>Lunes — Pierna + Gemelos</option>
+        <option>Martes — Pecho + Hombro + Tríceps</option>
+        <option>Miércoles — Espalda + Bíceps + Gemelos</option>
+        <option>Jueves — Pierna + Gemelos</option>
+        <option>Viernes — Torso + Brazos</option>
+        <option>Sábado — Especialización Bíceps + Gemelos</option>
+        <option>Otro</option>
+      </select>
+      <label>Ejercicio</label>
+      <input id="exercise" type="text" placeholder="Ej. Curl de bíceps">
+      <div class="row3">
+        <div><label>Series</label><input id="sets" type="number" min="1" step="1" placeholder="3"></div>
+        <div><label>Reps</label><input id="reps" type="number" min="1" step="1" placeholder="10"></div>
+        <div><label>RIR</label><input id="rir" type="number" min="0" max="5" step="1" placeholder="1"></div>
+      </div>
+      <div class="row">
+        <div><label>Peso</label><input id="weight" type="number" min="0" step="0.5" placeholder="30"></div>
+        <div><label>Unidad</label><select id="unit"><option>lb</option><option>kg</option></select></div>
+      </div>
+      <label>Notas</label>
+      <textarea id="notes" rows="3" placeholder="Técnica, dificultad, dolor, máquina usada, etc."></textarea>
+      <div class="actions">
+        <button onclick="saveEntry()">Guardar</button>
+        <button class="secondary" onclick="clearForm()">Limpiar</button>
+        <button class="green" onclick="exportCSV()">Exportar CSV</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Resumen</h2>
+      <div class="grid">
+        <div><small>Registros</small><div class="stat" id="totalEntries">0</div></div>
+        <div><small>Ejercicios</small><div class="stat" id="totalExercises">0</div></div>
+        <div><small>Sesiones</small><div class="stat" id="totalSessions">0</div></div>
+        <div><small>Series registradas</small><div class="stat" id="totalSets">0</div></div>
+      </div>
+      <hr style="border:0;border-top:1px solid var(--border);margin:20px 0">
+      <h2>Progreso del ejercicio</h2>
+      <label>Selecciona un ejercicio</label>
+      <select id="progressExercise" onchange="drawChart()"></select>
+      <p class="muted">La gráfica muestra el peso utilizado y las repeticiones registradas. Úsala para verificar si estás progresando con el tiempo.</p>
+      <canvas id="chart" width="900" height="280"></canvas>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:16px">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
+      <div>
+        <h2 style="margin-bottom:3px">Historial</h2>
+        <span class="badge">Guardado automáticamente en este dispositivo</span>
+      </div>
+      <button class="red" style="width:auto;padding:10px 15px" onclick="deleteAll()">Borrar todo</button>
+    </div>
+    <div class="table-wrap" style="margin-top:14px">
+      <table>
+        <thead><tr><th>Fecha</th><th>Sesión</th><th>Ejercicio</th><th>Series</th><th>Reps</th><th>Peso</th><th>RIR</th><th>Notas</th><th></th></tr></thead>
+        <tbody id="history"></tbody>
+      </table>
+      <div id="empty" class="empty">Todavía no hay registros.</div>
+    </div>
+  </section>
+
+  
+<section class="card" style="margin-top:16px">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+    <h2 style="margin:0">⏱️ Series + descanso</h2>
+    <button class="red" style="width:auto;padding:8px 12px" onclick="clearSavedWorkoutState()">Nueva sesión</button>
+  </div>
+  <p class="muted">
+    Registra cada serie por separado. Al marcar una serie como terminada puedes iniciar
+    automáticamente el descanso antes de la siguiente.
+  </p>
+
+  <div class="grid">
+    <div>
+      <label>Ejercicio de esta sesión</label>
+      <input id="sessionExercise" type="text" placeholder="Ej. Curl de bíceps">
+
+      <div class="row">
+        <div>
+          <label>Serie actual</label>
+          <input id="setNumber" type="number" min="1" value="1">
+        </div>
+        <div>
+          <label>Repeticiones realizadas</label>
+          <input id="setReps" type="number" min="1" placeholder="10">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Peso</label>
+          <input id="setWeight" type="number" min="0" step="0.5" placeholder="30">
+        </div>
+        <div>
+          <label>Unidad</label>
+          <select id="setUnit">
+            <option>lb</option>
+            <option>kg</option>
+          </select>
+        </div>
+      </div>
+
+      <label>RIR de esta serie</label>
+      <input id="setRir" type="number" min="0" max="5" placeholder="1">
+
+      <div class="actions">
+        <button class="green" onclick="finishCurrentSet()">✓ Terminé la serie</button>
+        <button class="secondary" onclick="nextSetWithoutTimer()">Siguiente serie</button>
+      </div>
+    </div>
+
+    <div style="text-align:center">
+      <small>DESCANSO</small>
+      <div id="timerDisplay" style="font-size:clamp(48px,12vw,82px);font-weight:900;letter-spacing:2px;margin:8px 0">01:30</div>
+      <div id="timerStatus" class="badge">Listo</div>
+
+      <label style="text-align:left">Descanso</label>
+      <select id="restPreset" onchange="applyRestPreset()">
+        <option value="60">1:00</option>
+        <option value="90" selected>1:30 — brazos / aislamiento</option>
+        <option value="120">2:00 — hipertrofia general</option>
+        <option value="150">2:30 — series exigentes</option>
+        <option value="180">3:00 — compuestos pesados</option>
+        <option value="240">4:00 — muy demandante</option>
+      </select>
+
+      <div class="actions">
+        <button onclick="startRestTimer()">▶ Empezar</button>
+        <button class="secondary" onclick="pauseRestTimer()">Ⅱ Pausar</button>
+        <button class="red" onclick="resetRestTimer()">↻ Reiniciar</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:18px">
+    <h2>Series registradas en esta sesión</h2>
+    <div class="table-wrap">
+      <table style="min-width:650px">
+        <thead>
+          <tr><th>Serie</th><th>Reps</th><th>Peso</th><th>RIR</th><th>Hora</th><th></th></tr>
+        </thead>
+        <tbody id="sessionSets"></tbody>
+      </table>
+      <div id="sessionSetsEmpty" class="empty">Aún no has registrado series.</div>
+    </div>
+  </div>
+</section>
+
+<section class="card" style="margin-top:16px">
+    <h2>Cómo usarlo</h2>
+    <ol>
+      <li>Registra cada ejercicio al terminarlo.</li>
+      <li>Introduce las <b>series reales</b>, las repeticiones realizadas y el peso utilizado.</li>
+      <li>Registra el <b>RIR</b>: 2 = te quedaban aproximadamente 2 repeticiones; 1 = una; 0 = fallo técnico.</li>
+      <li>Usa las notas para anotar si cambiaste de máquina, técnica o amplitud.</li>
+      <li>Cada semana compara el mismo ejercicio. La meta es progresar en repeticiones, peso o calidad de ejecución.</li>
+    </ol>
+    <p class="muted">Consejo: no necesitas subir peso en cada entrenamiento. Una progresión real también puede ser hacer más repeticiones con la misma carga y buena técnica.</p>
+  </section>
+</main>
+
+<script>
+/*
+  CONTROL DE HIPERTROFIA — versión con historial persistente y perfiles.
+  - Guarda todos los registros en localStorage.
+  - Permite crear/seleccionar un perfil.
+  - Recuerda automáticamente los ejercicios de cada sesión.
+  - Permite cargar la última rutina del mismo día para registrar solo
+    las diferencias de hoy.
+  - Permite repetir una sesión anterior como plantilla.
+*/
+const STORAGE_KEY = "hipertrofia_app_v2";
+const OLD_KEY = "hipertrofia_registros_v1";
+
+let app = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null") || {
+  currentProfile: "Mi perfil",
+  profiles: {
+    "Mi perfil": { entries: [] }
+  }
+};
+
+// Migración automática de los registros de la versión anterior.
+if (app.profiles["Mi perfil"].entries.length === 0) {
+  const old = JSON.parse(localStorage.getItem(OLD_KEY) || "[]");
+  if (old.length) app.profiles["Mi perfil"].entries = old;
+}
+
+function currentEntries() {
+  return app.profiles[app.currentProfile].entries;
+}
+
+function saveApp() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(app));
+}
+
+function today() {
+  const d = new Date();
+  return new Date(d.getTime() - d.getTimezoneOffset()*60000)
+    .toISOString().slice(0,10);
+}
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, m => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[m]));
+}
+
+function ensureExtraUI() {
+  const headerWrap = document.querySelector("header .wrap");
+  if (!document.getElementById("profileBar")) {
+    const bar = document.createElement("div");
+    bar.id = "profileBar";
+    bar.style.cssText = "margin-top:18px;display:flex;gap:9px;flex-wrap:wrap;align-items:center";
+    bar.innerHTML = `
+      <select id="profileSelect" style="width:auto;min-width:170px"></select>
+      <input id="newProfile" placeholder="Nuevo perfil" style="width:auto;min-width:170px">
+      <button onclick="createProfile()" style="width:auto;padding:10px 14px">Crear perfil</button>
+      <button onclick="loadLastWorkout()" class="green" style="width:auto;padding:10px 14px">Cargar última sesión</button>
+      <button onclick="loadLastSameDay()" class="secondary" style="width:auto;padding:10px 14px">Repetir este día</button>
+    `;
+    headerWrap.appendChild(bar);
+  }
+
+  if (!document.getElementById("historyTools")) {
+    const historyCard = [...document.querySelectorAll(".card")]
+      .find(c => c.querySelector("#history"));
+    if (historyCard) {
+      const tools = document.createElement("div");
+      tools.id = "historyTools";
+      tools.style.cssText = "display:flex;gap:9px;flex-wrap:wrap;margin:12px 0";
+      tools.innerHTML = `
+        <button class="secondary" style="width:auto;padding:9px 13px" onclick="exportBackup()">Guardar copia de seguridad</button>
+        <label style="width:auto;margin:0">
+          <span style="display:inline-block;padding:9px 13px;background:#374151;color:white;border-radius:10px;cursor:pointer">
+            Restaurar copia
+          </span>
+          <input id="importFile" type="file" accept=".json" style="display:none" onchange="importBackup(event)">
+        </label>
+      `;
+      historyCard.querySelector(".table-wrap").before(tools);
+    }
+  }
+}
+
+function populateProfiles() {
+  const sel = document.getElementById("profileSelect");
+  if (!sel) return;
+  sel.innerHTML = Object.keys(app.profiles)
+    .map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join("");
+  sel.value = app.currentProfile;
+  sel.onchange = () => {
+    app.currentProfile = sel.value;
+    saveApp();
+    render();
+  };
+}
+
+function createProfile() {
+  const input = document.getElementById("newProfile");
+  const name = input.value.trim();
+  if (!name) return alert("Escribe un nombre para el perfil.");
+  if (app.profiles[name]) return alert("Ese perfil ya existe.");
+  app.profiles[name] = { entries: [] };
+  app.currentProfile = name;
+  input.value = "";
+  saveApp();
+  populateProfiles();
+  render();
+}
+
+function getLastEntry(exercise) {
+  return currentEntries()
+    .filter(e => e.exercise.toLowerCase() === exercise.toLowerCase())
+    .sort((a,b) => b.date.localeCompare(a.date) || b.id-a.id)[0];
+}
+
+function getLatestWorkout() {
+  const es = currentEntries();
+  if (!es.length) return [];
+  const latestDate = [...new Set(es.map(e => e.date))].sort().pop();
+  return es.filter(e => e.date === latestDate)
+    .sort((a,b) => a.id-b.id);
+}
+
+function getLastWorkoutForDay(day) {
+  const es = currentEntries().filter(e => e.day === day);
+  if (!es.length) return [];
+  const latestDate = [...new Set(es.map(e => e.date))].sort().pop();
+  return es.filter(e => e.day === day && e.date === latestDate)
+    .sort((a,b) => a.id-b.id);
+}
+
+function loadWorkout(list, messageIfEmpty) {
+  if (!list.length) return alert(messageIfEmpty);
+
+  const date = document.getElementById("date");
+  date.value = today();
+
+  // Solo llenamos el primer ejercicio para mantener el formulario simple.
+  // El usuario puede guardar y pasar al siguiente; además se muestra un
+  // resumen de la plantilla que se va a seguir.
+  const summary = list.map((e,i) =>
+    `${i+1}. ${e.exercise} — ${e.sets}×${e.reps} — ${e.weight} ${e.unit} — RIR ${e.rir}`
+  ).join("\n");
+
+  const first = list[0];
+  document.getElementById("day").value = first.day;
+  document.getElementById("exercise").value = first.exercise;
+  document.getElementById("sets").value = first.sets;
+  document.getElementById("reps").value = first.reps;
+  document.getElementById("rir").value = first.rir;
+  document.getElementById("weight").value = first.weight;
+  document.getElementById("unit").value = first.unit;
+  document.getElementById("notes").value =
+    "Plantilla anterior. Hoy: " + list.length + " ejercicios previstos.";
+
+  alert("Rutina recuperada:\n\n" + summary +
+        "\n\nEl formulario quedó listo con el primer ejercicio. " +
+        "Puedes cambiar lo que realmente hiciste y guardar.");
+}
+
+function loadLastWorkout() {
+  loadWorkout(getLatestWorkout(), "Todavía no hay sesiones anteriores guardadas.");
+}
+
+function loadLastSameDay() {
+  const day = document.getElementById("day").value;
+  loadWorkout(getLastWorkoutForDay(day),
+    "No hay una sesión anterior registrada para este día.");
+}
+
+
+function saveEntry() {
+  const date = document.getElementById("date").value;
+  const day = document.getElementById("day").value;
+  const exercise = document.getElementById("exercise").value;
+  const setsValue = document.getElementById("sets").value;
+  const repsValue = document.getElementById("reps").value;
+  const rirValue = document.getElementById("rir").value;
+  const weightValue = document.getElementById("weight").value;
+  const unit = document.getElementById("unit").value;
+  const notes = document.getElementById("notes").value.trim();
+
+  const missing = [];
+
+  if (!date) missing.push("Fecha");
+  if (!day) missing.push("Día / sesión");
+  if (!exercise) missing.push("Ejercicio");
+  if (!setsValue || Number(setsValue) < 1) missing.push("Series");
+  if (!repsValue || Number(repsValue) < 1) missing.push("Repeticiones");
+  if (rirValue === "" || Number(rirValue) < 0) missing.push("RIR");
+  if (!weightValue || Number(weightValue) < 0) missing.push("Peso");
+  if (!unit) missing.push("Unidad de peso");
+
+  if (missing.length) {
+    alert("Falta completar:\n\n• " + missing.join("\n• "));
+    return;
+  }
+
+  const entry = {
+    id: Date.now(),
+    date,
+    day,
+    exercise,
+    sets: Number(setsValue),
+    reps: Number(repsValue),
+    rir: Number(rirValue),
+    weight: Number(weightValue),
+    unit,
+    notes
+  };
+
+  currentEntries().push(entry);
+  saveApp();
+  render();
+
+  const previous = currentEntries()
+    .filter(e =>
+      e.exercise.toLowerCase() === exercise.toLowerCase() &&
+      e.id !== entry.id
+    )
+    .sort((a,b) => b.date.localeCompare(a.date) || b.id-a.id)[0];
+
+  clearForm(false);
+
+  if (previous) {
+    document.getElementById("sets").value = previous.sets;
+    document.getElementById("reps").value = previous.reps;
+    document.getElementById("rir").value = previous.rir;
+    document.getElementById("weight").value = previous.weight;
+    document.getElementById("unit").value = previous.unit;
+    document.getElementById("notes").value =
+      `Referencia anterior: ${previous.weight} ${previous.unit} × ${previous.reps} reps.`;
+  }
+}
+
+function clearForm(resetDate=true) {
+  ["exercise","sets","reps","rir","weight","notes"].forEach(id =>
+    document.getElementById(id).value = ""
+  );
+  if (resetDate) document.getElementById("date").value = today();
+}
+
+function removeEntry(id) {
+  app.profiles[app.currentProfile].entries =
+    currentEntries().filter(e => e.id !== id);
+  saveApp();
+  render();
+}
+
+function deleteAll() {
+  if (!currentEntries().length) return;
+  if (confirm(`¿Borrar todo el historial del perfil "${app.currentProfile}"?`)) {
+    app.profiles[app.currentProfile].entries = [];
+    saveApp();
+    render();
+  }
+}
+
+function render() {
+  ensureExtraUI();
+  populateProfiles();
+
+  let entries = currentEntries().slice().sort(
+    (a,b) => b.date.localeCompare(a.date) || b.id-a.id
+  );
+
+  const body = document.getElementById("history");
+  body.innerHTML = "";
+  document.getElementById("empty").style.display =
+    entries.length ? "none" : "block";
+
+  entries.forEach(e => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${esc(e.date)}</td>
+      <td>${esc(e.day)}</td>
+      <td><b>${esc(e.exercise)}</b></td>
+      <td>${e.sets}</td>
+      <td>${e.reps}</td>
+      <td>${e.weight} ${esc(e.unit)}</td>
+      <td>${e.rir}</td>
+      <td>${esc(e.notes)}</td>
+      <td><button class="red" style="width:auto;padding:6px 9px"
+          onclick="removeEntry(${e.id})">×</button></td>`;
+    body.appendChild(tr);
+  });
+
+  const exercises = [...new Set(entries.map(e => e.exercise))].sort();
+  const sel = document.getElementById("progressExercise");
+  const current = sel.value;
+  sel.innerHTML = exercises.map(x => `<option>${esc(x)}</option>`).join("");
+  if (exercises.includes(current)) sel.value = current;
+
+  document.getElementById("totalEntries").textContent = entries.length;
+  document.getElementById("totalExercises").textContent = exercises.length;
+  document.getElementById("totalSessions").textContent =
+    new Set(entries.map(e => e.date)).size;
+  document.getElementById("totalSets").textContent =
+    entries.reduce((s,e) => s + e.sets, 0);
+
+  drawChart();
+}
+
+function drawChart() {
+  const canvas = document.getElementById("chart");
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const ex = document.getElementById("progressExercise").value;
+  const data = currentEntries()
+    .filter(e => e.exercise === ex)
+    .sort((a,b) => a.date.localeCompare(b.date) || a.id-b.id);
+
+  if (!data.length) {
+    ctx.fillStyle="#6b7280";
+    ctx.font="16px system-ui";
+    ctx.fillText("Selecciona un ejercicio con registros.",25,40);
+    return;
+  }
+
+  const pad={l:55,r:25,t:25,b:45}, w=canvas.width-pad.l-pad.r,
+        h=canvas.height-pad.t-pad.b;
+  const maxW=Math.max(...data.map(d=>d.weight),1);
+  const maxR=Math.max(...data.map(d=>d.reps),1);
+  const x=i=>pad.l+(data.length===1?w/2:i*w/(data.length-1));
+  const yW=v=>pad.t+h-(v/maxW)*h;
+  const yR=v=>pad.t+h-(v/maxR)*h;
+
+  ctx.strokeStyle="#e5e7eb";ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){
+    const y=pad.t+h*i/4;
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+w,y);ctx.stroke();
+  }
+
+  ctx.fillStyle="#374151";ctx.font="12px system-ui";
+  ctx.fillText("Peso",8,18);
+  ctx.fillText("Reps",canvas.width-38,18);
+
+  function line(fn, color) {
+    ctx.strokeStyle=color;ctx.lineWidth=3;ctx.beginPath();
+    data.forEach((d,i)=>{
+      const X=x(i),Y=fn(d);
+      i ? ctx.lineTo(X,Y) : ctx.moveTo(X,Y);
+    });
+    ctx.stroke();
+    ctx.fillStyle=color;
+    data.forEach((d,i)=>{
+      ctx.beginPath();ctx.arc(x(i),fn(d),4,0,Math.PI*2);ctx.fill();
+    });
+  }
+
+  line(d=>yW(d.weight),"#2563eb");
+  line(d=>yR(d.reps),"#0f766e");
+
+  ctx.fillStyle="#374151";
+  data.forEach((d,i)=>{
+    if(i===0 || i===data.length-1 || data.length<8)
+      ctx.fillText(d.date.slice(5),x(i)-16,canvas.height-15);
+  });
+
+  ctx.fillStyle="#2563eb";ctx.fillRect(pad.l,7,12,3);
+  ctx.fillStyle="#374151";ctx.fillText("Peso",pad.l+17,12);
+  ctx.fillStyle="#0f766e";ctx.fillRect(pad.l+70,7,12,3);
+  ctx.fillStyle="#374151";ctx.fillText("Repeticiones",pad.l+87,12);
+}
+
+function exportCSV() {
+  const entries = currentEntries();
+  if(!entries.length) return alert("No hay registros para exportar.");
+  const headers=["Fecha","Sesión","Ejercicio","Series","Repeticiones",
+                 "Peso","Unidad","RIR","Notas"];
+  const rows=entries.map(e=>[
+    e.date,e.day,e.exercise,e.sets,e.reps,e.weight,e.unit,e.rir,e.notes
+  ]);
+  const csv=[headers,...rows].map(r=>r.map(v =>
+    `"${String(v??"").replace(/"/g,'""')}"`
+  ).join(",")).join("\n");
+  const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`registro_hipertrofia_${app.currentProfile.replace(/\s+/g,"_")}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function exportBackup() {
+  const blob = new Blob([JSON.stringify(app,null,2)],
+    {type:"application/json;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="respaldo_control_hipertrofia.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importBackup(event) {
+  const file=event.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try {
+      const imported=JSON.parse(reader.result);
+      if(!imported.profiles) throw new Error("Formato no válido");
+      app=imported;
+      if(!app.currentProfile || !app.profiles[app.currentProfile])
+        app.currentProfile=Object.keys(app.profiles)[0];
+      saveApp(); render();
+      alert("Copia restaurada correctamente.");
+    } catch(e) {
+      alert("No se pudo restaurar la copia. Comprueba que sea un archivo JSON de esta aplicación.");
+    }
+  };
+  reader.readAsText(file);
+}
+
+
+let restTimer = null;
+let restRemaining = 90;
+let restRunning = false;
+let sessionSets = [];
+let audioContext = null;
+
+const WORKOUT_STATE_KEY = "hipertrofia_sesion_actual_v1";
+
+function saveWorkoutState() {
+  const state = {
+    exercise: document.getElementById("sessionExercise")?.value || "",
+    setNumber: document.getElementById("setNumber")?.value || "1",
+    restPreset: document.getElementById("restPreset")?.value || "90",
+    restRemaining,
+    sessionSets,
+    date: document.getElementById("date")?.value || today(),
+    day: document.getElementById("day")?.value || ""
+  };
+  localStorage.setItem(WORKOUT_STATE_KEY, JSON.stringify(state));
+}
+
+function restoreWorkoutState() {
+  try {
+    const state = JSON.parse(localStorage.getItem(WORKOUT_STATE_KEY) || "null");
+    if (!state) return;
+
+    const dateEl = document.getElementById("date");
+    const exerciseEl = document.getElementById("sessionExercise");
+    const setEl = document.getElementById("setNumber");
+    const presetEl = document.getElementById("restPreset");
+
+    if (exerciseEl) exerciseEl.value = state.exercise || "";
+    if (setEl) setEl.value = state.setNumber || "1";
+    if (presetEl && state.restPreset) presetEl.value = state.restPreset;
+
+    if (state.restRemaining != null && Number(state.restRemaining) >= 0) {
+      restRemaining = Number(state.restRemaining);
+    } else {
+      restRemaining = getSelectedRest();
+    }
+
+    if (Array.isArray(state.sessionSets)) sessionSets = state.sessionSets;
+
+    if (dateEl && state.date) dateEl.value = state.date;
+    const dayEl = document.getElementById("day");
+    if (dayEl && state.day) dayEl.value = state.day;
+
+    updateTimerDisplay();
+    renderSessionSets();
+  } catch (e) {
+    console.warn("No se pudo restaurar la sesión:", e);
+  }
+}
+
+function clearSavedWorkoutState() {
+  localStorage.removeItem(WORKOUT_STATE_KEY);
+  sessionSets = [];
+  restRemaining = getSelectedRest();
+  restRunning = false;
+  clearInterval(restTimer);
+  renderSessionSets();
+  updateTimerDisplay();
+}
+
+function formatTime(total) {
+  const m = Math.floor(total / 60).toString().padStart(2, "0");
+  const s = Math.max(0, total % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
+}
+
+function updateTimerDisplay() {
+  const display = document.getElementById("timerDisplay");
+  const status = document.getElementById("timerStatus");
+  if (!display || !status) return;
+
+  display.textContent = formatTime(restRemaining);
+
+  if (restRemaining <= 0) {
+    status.textContent = "¡Descanso terminado!";
+    status.style.background = "#dcfce7";
+    status.style.color = "#166534";
+  } else if (restRunning) {
+    status.textContent = "Descansando…";
+    status.style.background = "#eff6ff";
+    status.style.color = "#1d4ed8";
+  } else {
+    status.textContent = "Listo / pausado";
+    status.style.background = "#f3f4f6";
+    status.style.color = "#374151";
+  }
+}
+
+function getSelectedRest() {
+  return Number(document.getElementById("restPreset").value) || 90;
+}
+
+function applyRestPreset() {
+  clearInterval(restTimer);
+  restRunning = false;
+  restRemaining = getSelectedRest();
+  updateTimerDisplay();
+  saveWorkoutState();
+}
+
+function startRestTimer() {
+  if (restRunning) return;
+
+  // Si está en cero, iniciar significa comenzar un nuevo descanso.
+  if (restRemaining <= 0) restRemaining = getSelectedRest();
+
+  restRunning = true;
+  updateTimerDisplay();
+
+  clearInterval(restTimer);
+  restTimer = setInterval(() => {
+    restRemaining -= 1;
+
+    if (restRemaining <= 0) {
+      restRemaining = 0;
+      clearInterval(restTimer);
+      restTimer = null;
+      restRunning = false;
+      updateTimerDisplay();
+      saveWorkoutState();
+      playRestAlarm();
+
+      if (navigator.vibrate) {
+        navigator.vibrate([300,150,300,150,500]);
+      }
+    } else {
+      updateTimerDisplay();
+      saveWorkoutState();
+    }
+  }, 1000);
+}
+
+function pauseRestTimer() {
+  clearInterval(restTimer);
+  restTimer = null;
+  restRunning = false;
+  updateTimerDisplay();
+  saveWorkoutState();
+}
+
+function resetRestTimer() {
+  clearInterval(restTimer);
+  restTimer = null;
+  restRunning = false;
+  restRemaining = getSelectedRest();
+  updateTimerDisplay();
+  saveWorkoutState();
+}
+
+function playRestAlarm() {
+  try {
+    audioContext = audioContext ||
+      new (window.AudioContext || window.webkitAudioContext)();
+
+    if (audioContext.state === "suspended") audioContext.resume();
+
+    const now = audioContext.currentTime;
+    [0, 0.22, 0.44].forEach(offset => {
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+
+      osc.type = "sine";
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.0001, now + offset);
+      gain.gain.exponentialRampToValueAtTime(0.3, now + offset + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.16);
+
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.start(now + offset);
+      osc.stop(now + offset + 0.17);
+    });
+  } catch (e) {
+    // Si el navegador bloquea audio, la alerta visual sigue funcionando.
+  }
+}
+
+
+function bindPersistentInputs() {
+  ["sessionExercise","setNumber","setReps","setWeight","setUnit","setRir",
+   "restPreset","date","day"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener("input", saveWorkoutState);
+      el.addEventListener("change", saveWorkoutState);
+    }
+  });
+}
+
+function finishCurrentSet() {
+  const exercise = document.getElementById("sessionExercise").value.trim();
+  const setNumber = Number(document.getElementById("setNumber").value);
+  const reps = Number(document.getElementById("setReps").value);
+  const weight = Number(document.getElementById("setWeight").value);
+  const unit = document.getElementById("setUnit").value;
+  const rir = document.getElementById("setRir").value;
+
+  const missing = [];
+  if (!exercise) missing.push("Ejercicio");
+  if (!setNumber || setNumber < 1) missing.push("Número de serie");
+  if (!reps || reps < 1) missing.push("Repeticiones");
+  if (weight < 0 || document.getElementById("setWeight").value === "") missing.push("Peso");
+  if (rir === "") missing.push("RIR");
+
+  if (missing.length) {
+    alert("Falta completar:\n\n• " + missing.join("\n• "));
+    return;
+  }
+
+  const record = {
+    id: Date.now(),
+    set: setNumber,
+    reps,
+    weight,
+    unit,
+    rir: Number(rir),
+    time: new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})
+  };
+
+  sessionSets.push(record);
+  renderSessionSets();
+  saveWorkoutState();
+
+  // Guardar también esta serie en el historial principal inmediatamente.
+  const entry = {
+    id: Date.now() + 1,
+    date: document.getElementById("date").value || today(),
+    day: document.getElementById("day").value,
+    exercise,
+    sets: 1,
+    reps,
+    rir: Number(rir),
+    weight,
+    unit,
+    notes: `Serie ${setNumber} registrada desde el temporizador.`
+  };
+
+  currentEntries().push(entry);
+  saveApp();
+  render();
+
+  // Preparar siguiente serie.
+  document.getElementById("setNumber").value = setNumber + 1;
+  document.getElementById("setReps").value = "";
+  document.getElementById("setRir").value = "";
+  saveWorkoutState();
+
+  // Al terminar una serie, el descanso queda listo para iniciar.
+  resetRestTimer();
+  startRestTimer();
+}
+
+function nextSetWithoutTimer() {
+  const n = Number(document.getElementById("setNumber").value) || 1;
+  document.getElementById("setNumber").value = n + 1;
+  document.getElementById("setReps").focus();
+  saveWorkoutState();
+}
+
+function renderSessionSets() {
+  const tbody = document.getElementById("sessionSets");
+  const empty = document.getElementById("sessionSetsEmpty");
+  if (!tbody || !empty) return;
+
+  tbody.innerHTML = "";
+  empty.style.display = sessionSets.length ? "none" : "block";
+
+  sessionSets.forEach(s => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${s.set}</td>
+      <td>${s.reps}</td>
+      <td>${s.weight} ${esc(s.unit)}</td>
+      <td>${s.rir}</td>
+      <td>${esc(s.time)}</td>
+      <td>
+        <button class="red" style="width:auto;padding:6px 9px"
+          onclick="removeSessionSet(${s.id})">×</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function removeSessionSet(id) {
+  sessionSets = sessionSets.filter(s => s.id !== id);
+  renderSessionSets();
+bindPersistentInputs();
+restoreWorkoutState();
+  saveWorkoutState();
+}
+
+document.getElementById("date").value = today();
+
+ensureExtraUI();
+
+render();
+updateTimerDisplay();
+</script>
+</body>
+</html>
