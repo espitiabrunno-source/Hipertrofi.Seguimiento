@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta name="supabase-project" content="glomtdofnkayvwslxqko">
-<meta name="app-version" content="V11.1">
+<meta name="supabase-project" content="glomtdofnkaywvslxqko">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control de Hipertrofia</title>
@@ -50,6 +49,42 @@ small{color:var(--muted)}
 .user-bar{position:sticky;top:0;z-index:50;display:flex;justify-content:space-between;align-items:center;padding:9px 16px;background:#fff;border-bottom:1px solid #ddd}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style id="v12-1-ux">
+.v121-workout-panel{display:grid;gap:14px;margin:16px 0}
+.v121-priority{border:2px solid rgba(34,197,94,.25);border-radius:20px;padding:18px;background:rgba(34,197,94,.06)}
+.v121-priority h3{margin:0 0 5px;font-size:20px}.v121-help{font-size:12px;opacity:.72;line-height:1.45;margin-bottom:12px}
+.v121-series-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.v121-field label{display:block;font-size:12px;font-weight:700;margin-bottom:5px}.v121-field input{width:100%;box-sizing:border-box}
+.v121-timer{font-size:44px;font-weight:900;text-align:center;letter-spacing:1px;margin:8px 0}
+.v121-timer-status{text-align:center;font-size:12px;opacity:.7;margin-bottom:10px}
+.v121-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.v121-actions button{min-height:44px}
+.v121-rest-table{width:100%;border-collapse:collapse;font-size:13px}.v121-rest-table th,.v121-rest-table td{padding:9px;border-bottom:1px solid rgba(0,0,0,.08);text-align:left}.v121-rest-table td:last-child,.v121-rest-table th:last-child{text-align:right}
+.v121-zero{font-weight:800}.v121-note{font-size:11px;opacity:.65;margin-top:8px}
+@media(max-width:600px){.v121-series-row{grid-template-columns:1fr}.v121-actions{grid-template-columns:1fr}}
+</style>
+
+
+<style id="v13-unified-ux">
+/* V13: unified exercise/series/rest recorder */
+#v121WorkoutPanel{display:none!important}
+.v13-shell{display:grid;gap:14px;margin:16px 0}
+.v13-card{border:1px solid rgba(0,0,0,.08);border-radius:20px;padding:16px;background:var(--card,#fff);box-shadow:0 4px 18px rgba(0,0,0,.05)}
+.v13-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.v13-title{font-size:20px;font-weight:900}.v13-sub{font-size:12px;opacity:.68;line-height:1.45;margin-top:4px}
+.v13-day{padding:8px 12px;border-radius:999px;background:rgba(34,197,94,.12);font-size:12px;font-weight:800;white-space:nowrap}
+.v13-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.v13-field label{display:block;font-size:12px;font-weight:800;margin-bottom:5px}.v13-field input,.v13-field select{width:100%;box-sizing:border-box}
+.v13-wide{grid-column:1/-1}
+.v13-suggest{display:grid;gap:8px;margin-top:10px}.v13-ex{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 12px;border:1px solid rgba(0,0,0,.08);border-radius:12px;cursor:pointer}
+.v13-ex small{opacity:.65}.v13-ex.active{border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.08)}
+.v13-series{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;align-items:end}.v13-timer{text-align:center;font-size:44px;font-weight:900;letter-spacing:1px;margin:10px 0}
+.v13-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.v13-actions button{min-height:44px}.v13-primary{width:100%;min-height:48px;margin-top:10px}
+.v13-log{display:grid;gap:7px;margin-top:12px}.v13-log-row{display:grid;grid-template-columns:45px 1fr 70px 70px;gap:8px;padding:9px;border-radius:10px;background:rgba(0,0,0,.035);font-size:12px}
+.v13-rest{font-weight:800}.v13-tip{font-size:11px;opacity:.62;margin-top:8px}
+@media(max-width:650px){.v13-grid,.v13-series{grid-template-columns:1fr}.v13-actions{grid-template-columns:1fr}.v13-day{font-size:11px}}
+</style>
+
+
 </head>
 <body>
 
@@ -86,11 +121,11 @@ small{color:var(--muted)}
 
     <div id="verifyPanel" style="display:none">
       <h2>📩 Confirma tu correo</h2>
-      <p>Te enviamos un correo de confirmación a:</p>
-      <p><strong id="verifyEmailLabel"></strong></p>
-      <p class="muted">Abre el correo y pulsa <b>Confirm email address</b>. No necesitas introducir ningún código.</p>
-      <button class="green auth-main-btn" onclick="checkEmailConfirmation()">Ya confirmé mi correo</button>
-      <button class="secondary auth-link-btn" onclick="resendConfirmationEmail()">Reenviar correo de confirmación</button>
+      <p>Te enviamos un código de 6 dígitos a tu correo.</p>
+      <label>Código de confirmación</label>
+      <input id="verifyToken" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456">
+      <button class="green auth-main-btn" onclick="verifyEmailCode()">Confirmar correo</button>
+      <button class="secondary auth-link-btn" onclick="resendVerificationCode()">Reenviar código</button>
       <button class="secondary auth-link-btn" onclick="showLogin()">Volver al inicio</button>
       <div id="verifyMsg" class="auth-msg"></div>
     </div>
@@ -108,6 +143,102 @@ small{color:var(--muted)}
     <p>Registra series, repeticiones, peso y RIR para comprobar tu progreso.</p>
   </div>
 </header>
+
+
+<section class="v121-workout-panel" id="v121WorkoutPanel">
+  <div class="v121-priority">
+    <h3>🏋️ 1. Registra tu serie + descanso</h3>
+    <div class="v121-help">
+      Primero registra lo que acabas de hacer. <b>Serie</b> = número de la serie que completaste.
+      <b>Repeticiones</b> = cuántas repeticiones hiciste. Al registrar la serie, inicia tu descanso.
+    </div>
+    <div class="v121-series-row">
+      <div class="v121-field"><label for="v121Set">Serie</label><input id="v121Set" type="number" min="1" value="1"></div>
+      <div class="v121-field"><label for="v121Reps">Repeticiones</label><input id="v121Reps" type="number" min="0" placeholder="Ej. 10"></div>
+    </div>
+    <div class="v121-timer" id="v121Timer">00:00</div>
+    <div class="v121-timer-status" id="v121TimerStatus">Descanso listo para comenzar</div>
+    <div class="v121-actions">
+      <button type="button" id="v121Start">▶ Empezar</button>
+      <button type="button" id="v121Pause">⏸ Pausar</button>
+      <button type="button" id="v121Reset">↻ Reiniciar</button>
+    </div>
+    <div class="v121-actions" style="grid-template-columns:1fr;margin-top:8px">
+      <button type="button" id="v121Register">✓ Registrar serie y comenzar descanso</button>
+    </div>
+  </div>
+
+  <div class="v12-card">
+    <div class="v12-title">⏱️ Objetivo de descanso</div>
+    <table class="v121-rest-table">
+      <thead><tr><th>Objetivo</th><th>Tiempo</th></tr></thead>
+      <tbody><tr><td>Sin límite</td><td><span class="v121-zero">0:00</span></td></tr></tbody>
+    </table>
+    <div class="v121-note">El objetivo comienza en 0:00. El cronómetro cuenta hacia arriba y puede continuar todo el tiempo que necesites. No se detiene automáticamente.</div>
+  </div>
+</section>
+
+
+<section id="v13UnifiedRecorder" class="v13-shell">
+  <div class="v13-card">
+    <div class="v13-header">
+      <div><div class="v13-title">🏋️ Registrar entrenamiento</div>
+      <div class="v13-sub">Todo se registra aquí: ejercicio, serie, repeticiones, peso y descanso. Este es el único lugar para registrar tu serie.</div></div>
+      <div id="v13DayBadge" class="v13-day">Día 1</div>
+    </div>
+
+    <div class="v13-card" style="margin-top:12px;padding:13px;background:rgba(0,0,0,.02)">
+      <div style="font-weight:800">💡 Sugerencia para hoy</div>
+      <div id="v13SuggestionText" class="v13-sub">Calculando tu siguiente día de entrenamiento…</div>
+      <div id="v13Suggestions" class="v13-suggest"></div>
+    </div>
+
+    <div class="v13-grid" style="margin-top:12px">
+      <div class="v13-field v13-wide">
+        <label for="v13Exercise">Ejercicio</label>
+        <input id="v13Exercise" type="text" placeholder="Ej. Curl de bíceps">
+      </div>
+      <div class="v13-field">
+        <label for="v13WeightType">Tipo de peso</label>
+        <select id="v13WeightType">
+          <option value="lb">Libras (lb)</option>
+          <option value="kg">Kilogramos (kg)</option>
+          <option value="peso corporal">Peso corporal</option>
+        </select>
+      </div>
+      <div class="v13-field">
+        <label for="v13Weight">Peso</label>
+        <input id="v13Weight" type="number" min="0" step="0.5" placeholder="Ej. 30">
+      </div>
+      <div class="v13-field">
+        <label for="v13Set">Serie actual</label>
+        <input id="v13Set" type="number" min="1" value="1">
+      </div>
+    </div>
+
+    <div class="v13-card" style="margin-top:12px;padding:13px;background:rgba(34,197,94,.05)">
+      <div style="font-weight:900">1️⃣ Serie + descanso</div>
+      <div class="v13-sub">Haz la serie, indica las repeticiones y regístrala. El cronómetro comienza para medir tu descanso.</div>
+      <div class="v13-series" style="margin-top:10px">
+        <div class="v13-field"><label for="v13Reps">Repeticiones</label><input id="v13Reps" type="number" min="0" placeholder="Ej. 10"></div>
+        <div class="v13-field"><label>Descanso</label><div id="v13Timer" class="v13-timer">00:00</div></div>
+        <div class="v13-field"><label>Estado</label><div id="v13TimerStatus" class="v13-sub">Listo para registrar</div></div>
+      </div>
+      <div class="v13-actions">
+        <button type="button" id="v13Start">▶ Empezar</button>
+        <button type="button" id="v13Pause">⏸ Pausar</button>
+        <button type="button" id="v13Reset">↻ Reiniciar</button>
+      </div>
+      <button type="button" id="v13Register" class="v13-primary">✓ Registrar serie</button>
+      <div class="v13-tip">El descanso empieza en 0:00 y puede continuar sin límite. Tú decides cuándo terminarlo.</div>
+    </div>
+
+    <div class="v13-card" style="margin-top:12px;padding:13px">
+      <div style="font-weight:900">📋 Series registradas de este ejercicio</div>
+      <div id="v13Log" class="v13-log"><div class="v13-sub">Todavía no has registrado series.</div></div>
+    </div>
+  </div>
+</section>
 
 <main>
   <div class="grid">
@@ -178,15 +309,6 @@ small{color:var(--muted)}
     </div>
   </section>
 
-  
-<section class="card" style="margin-top:16px">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-    <div>
-      <h2 style="margin:0">⏱️ Series + descanso</h2>
-      <p class="muted" style="margin:5px 0 0">Registra cada serie y controla tu descanso.</p>
-    </div>
-    <button class="red" style="width:auto;padding:8px 12px" onclick="clearSavedWorkoutState()">Nueva sesión</button>
-  </div>
 
   <div class="grid" style="margin-top:14px">
     <div>
@@ -262,7 +384,7 @@ small{color:var(--muted)}
 </main>
 
 <script>
-/* CONTROL DE HIPERTROFIA V11 — Confirmación de correo + historial remoto */
+/* CONTROL DE HIPERTROFIA V10 — Supabase Auth + historial remoto */
 const SUPABASE_URL = "https://glomtdofnkayvwslxqko.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_uI9eipYEQzweVr9BgWNGAA_drTHHNzZ";
 
@@ -279,7 +401,7 @@ let sessionSets = [];
 let audioContext = null;
 let verificationEmail = "";
 
-const WORKOUT_STATE_KEY = "hipertrofia_sesion_v11";
+const WORKOUT_STATE_KEY = "hipertrofia_sesion_v10";
 
 function authConfigured(){
   return SUPABASE_URL.startsWith("https://") && !SUPABASE_PUBLISHABLE_KEY.includes("PEGA_AQUI");
@@ -295,53 +417,20 @@ function formatDuration(sec){sec=Math.max(0,Math.round(Number(sec)||0));const h=
 
 function showLogin(){document.getElementById("loginPanel").style.display="";document.getElementById("registerPanel").style.display="none";document.getElementById("verifyPanel").style.display="none";}
 function showRegister(){document.getElementById("loginPanel").style.display="none";document.getElementById("registerPanel").style.display="";document.getElementById("verifyPanel").style.display="none";}
-function showVerify(email,msg="Revisa tu correo y pulsa el enlace de confirmación."){
-  verificationEmail=email;
-  document.getElementById("loginPanel").style.display="none";
-  document.getElementById("registerPanel").style.display="none";
-  document.getElementById("verifyPanel").style.display="";
-  const label=document.getElementById("verifyEmailLabel"); if(label) label.textContent=email;
-  authMessage("verifyMsg",msg,true);
-}
-
-async function testSupabaseConnection(){
-  try{
-    const r=await fetch(SUPABASE_URL+"/auth/v1/settings",{method:"GET",headers:{apikey:SUPABASE_PUBLISHABLE_KEY}});
-    if(!r.ok){let t="";try{t=await r.text()}catch(_){};return {ok:false,detail:"Supabase respondió HTTP "+r.status+(t?" — "+t.slice(0,180):"")};}
-    return {ok:true};
-  }catch(e){return {ok:false,detail:e?.message||String(e)};}
-}
+function showVerify(email,msg="Revisa tu correo. Si recibes un enlace, haz clic en él. Si recibes un código de 6 dígitos, escríbelo aquí."){verificationEmail=email;document.getElementById("loginPanel").style.display="none";document.getElementById("registerPanel").style.display="none";document.getElementById("verifyPanel").style.display="";authMessage("verifyMsg",msg,true);setTimeout(()=>document.getElementById("verifyToken")?.focus(),50)}
 
 async function initAuth(){
-  if(!authConfigured()){authMessage("loginMsg","Falta la Publishable Key de Supabase.");return;}
-  if(!navigator.onLine){authMessage("loginMsg","El navegador indica que no hay conexión a Internet.");return;}
-  try{
-    if(!window.supabase?.createClient) throw new Error("No se pudo cargar la librería de Supabase desde jsDelivr.");
-    supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-    const {data:{session},error}=await supabaseClient.auth.getSession();
-    if(error) throw error;
+  if(!authConfigured()){authMessage("loginMsg","Falta pegar tu Publishable Key de Supabase en este HTML.");return;}
+  supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+  const {data:{session}}=await supabaseClient.auth.getSession();
+  if(session) await onLoggedIn(session.user); else onLoggedOut();
+  supabaseClient.auth.onAuthStateChange(async (event,session)=>{
     if(session) await onLoggedIn(session.user); else onLoggedOut();
-    supabaseClient.auth.onAuthStateChange(async (event,session)=>{
-      if(session){
-        await onLoggedIn(session.user);
-        if(event === "SIGNED_IN" && verificationEmail){
-          authMessage("verifyMsg","Correo confirmado correctamente.",true);
-        }
-      } else onLoggedOut();
-    });
-    // When the user returns from the confirmation link, Supabase handles the
-    // session from the URL because detectSessionInUrl is enabled.
-    if(window.location.hash.includes("access_token=")){
-      setTimeout(()=>window.history.replaceState({},document.title,window.location.pathname+window.location.search),1200);
-    }
-  }catch(e){
-    console.error("Error inicializando Supabase:",e);
-    authMessage("loginMsg","No se pudo iniciar la conexión con Supabase. "+(e?.message||String(e)));
-  }
+  });
 }
 
 async function registerUser(){
-  if(!supabaseClient){authMessage("registerMsg","Supabase no está conectado. Recarga la página y prueba de nuevo.");return;}
+  if(!supabaseClient){authMessage("registerMsg","Configura primero la Publishable Key.");return;}
   const name=document.getElementById("registerName").value.trim();
   const email=document.getElementById("registerEmail").value.trim().toLowerCase();
   const p=document.getElementById("registerPassword").value;
@@ -349,49 +438,25 @@ async function registerUser(){
   if(!name||!email||!p||!p2){authMessage("registerMsg","Completa todos los campos.");return;}
   if(p.length<8){authMessage("registerMsg","La contraseña debe tener al menos 8 caracteres.");return;}
   if(p!==p2){authMessage("registerMsg","Las contraseñas no coinciden.");return;}
-  authMessage("registerMsg","Creando tu cuenta…",true);
-  try{
-    const redirectTo=window.location.href.split('#')[0];
-    const {data,error}=await supabaseClient.auth.signUp({
-      email,password:p,
-      options:{data:{display_name:name},emailRedirectTo:redirectTo}
-    });
-    if(error){authMessage("registerMsg",error.message);return;}
-    verificationEmail=email;
-    if(data.session){await onLoggedIn(data.user);return;}
-    showVerify(email,"Cuenta creada. Revisa tu correo y pulsa el enlace para confirmar tu dirección.");
-  }catch(e){
-    console.error("Error de registro Supabase:",e);
-    const diagnostic=await testSupabaseConnection();
-    let msg="No se pudo completar el registro. ";
-    if(diagnostic.ok){
-      msg+="Supabase responde, pero el registro fue rechazado. Revisa Authentication → Providers → Email y que Confirm email esté activado.";
-    }else{
-      msg+="La página no logra comunicarse con Supabase. "+diagnostic.detail;
-    }
-    authMessage("registerMsg",msg);
-  }
+  const {data,error}=await supabaseClient.auth.signUp({email,password:p,options:{data:{display_name:name}}});
+  if(error){authMessage("registerMsg",error.message);return;}
+  verificationEmail=email;
+  if(data.session){await onLoggedIn(data.user);return;}
+  showVerify(email,"Cuenta creada. Te enviamos un código de 6 dígitos. Introduce el código para confirmar tu correo.");
 }
 
-async function resendConfirmationEmail(){
-  if(!verificationEmail){authMessage("verifyMsg","No tenemos un correo pendiente de confirmar.");return;}
-  authMessage("verifyMsg","Enviando correo…",true);
+async function verifyEmailCode(){
+  const token=document.getElementById("verifyToken").value.trim();
+  if(!verificationEmail||!/^\d{6}$/.test(token)){authMessage("verifyMsg","Introduce el código de 6 dígitos recibido por correo, si tu plantilla utiliza código OTP.");return;}
+  const {data,error}=await supabaseClient.auth.verifyOtp({email:verificationEmail,token,type:"signup"});
+  if(error){authMessage("verifyMsg",error.message);return;}
+  if(data.session) await onLoggedIn(data.user); else authMessage("verifyMsg","Correo confirmado. Ya puedes iniciar sesión.",true);
+}
+
+async function resendVerificationCode(){
+  if(!verificationEmail)return;
   const {error}=await supabaseClient.auth.resend({type:"signup",email:verificationEmail});
-  if(error) authMessage("verifyMsg",error.message);
-  else authMessage("verifyMsg","Correo de confirmación reenviado. Revisa tu bandeja de entrada y spam.",true);
-}
-
-async function checkEmailConfirmation(){
-  if(!supabaseClient){authMessage("verifyMsg","Supabase no está conectado.");return;}
-  authMessage("verifyMsg","Comprobando confirmación…",true);
-  const {data,error}=await supabaseClient.auth.getUser();
-  if(error){authMessage("verifyMsg","Todavía no aparece una sesión confirmada. Abre el correo y pulsa el enlace de confirmación. Si ya lo hiciste, intenta iniciar sesión.");return;}
-  if(data?.user?.email_confirmed_at){
-    authMessage("verifyMsg","Correo confirmado correctamente. Ya puedes iniciar sesión.",true);
-    setTimeout(showLogin,700);
-  }else{
-    authMessage("verifyMsg","Todavía no aparece como confirmado. Abre el correo y pulsa el enlace de confirmación.");
-  }
+  if(error) authMessage("verifyMsg",error.message); else authMessage("verifyMsg","Código reenviado. Revisa tu correo.",true);
 }
 
 async function loginUser(){
@@ -593,6 +658,222 @@ function saveWorkoutFormState(){saveWorkoutState()}
 if(document.getElementById("date"))document.getElementById("date").value=today();
 ensureExtraUI();updateTimerDisplay();renderSessionSets();
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initAuth);else initAuth();
+</script>
+
+<style id="v12-styles">
+.v12-wrap{display:grid;gap:16px;margin:18px 0}.v12-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.v12-card{background:var(--card,#fff);border:1px solid rgba(0,0,0,.08);border-radius:18px;padding:16px;box-shadow:0 4px 16px rgba(0,0,0,.05)}
+.v12-value{font-size:30px;font-weight:900}.v12-label{font-size:12px;opacity:.68;margin-top:4px}.v12-title{font-size:18px;font-weight:800;margin-bottom:10px}
+.v12-streak{display:flex;justify-content:space-between;align-items:center}.v12-big{font-size:44px;font-weight:900}
+.v12-calhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.v12-calhead button{border:0;background:transparent;font-size:24px;cursor:pointer;padding:4px 12px;border-radius:10px}
+.v12-month{font-weight:800;font-size:18px}.v12-week,.v12-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}.v12-week div{text-align:center;font-size:11px;opacity:.6;font-weight:700}
+.v12-day{min-height:52px;border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:6px;position:relative;background:rgba(0,0,0,.015);cursor:pointer}.v12-day.empty{border-color:transparent;background:transparent;cursor:default}
+.v12-day.trained{background:rgba(34,197,94,.13);border-color:rgba(34,197,94,.28)}.v12-day.streak{box-shadow:inset 0 0 0 2px rgba(245,158,11,.6)}.v12-day.today .num{text-decoration:underline;text-underline-offset:3px}
+.v12-dot{position:absolute;right:7px;bottom:7px;width:7px;height:7px;border-radius:50%;background:#22c55e}.v12-detail{display:none;margin-top:12px;padding:12px;border-radius:12px;background:rgba(0,0,0,.04)}
+.v12-bars{display:grid;gap:10px}.v12-row{display:grid;grid-template-columns:95px 1fr 55px;gap:8px;align-items:center;font-size:12px}.v12-bar{height:8px;background:rgba(0,0,0,.08);border-radius:99px;overflow:hidden}.v12-fill{height:100%;background:#22c55e;border-radius:99px}
+@media(max-width:720px){.v12-kpis{grid-template-columns:repeat(2,1fr)}.v12-day{min-height:46px}}
+</style>
+
+<section id="v12Dashboard" class="v12-wrap" hidden>
+  <div class="v12-kpis">
+    <div class="v12-card"><div id="v12Sessions" class="v12-value">0</div><div class="v12-label">Sesiones</div></div>
+    <div class="v12-card"><div id="v12Current" class="v12-value">0</div><div class="v12-label">🔥 Racha actual</div></div>
+    <div class="v12-card"><div id="v12Best" class="v12-value">0</div><div class="v12-label">🏆 Mejor racha</div></div>
+    <div class="v12-card"><div id="v12Consistency" class="v12-value">0%</div><div class="v12-label">Consistencia · 30 días</div></div>
+  </div>
+  <div class="v12-card">
+    <div class="v12-streak"><div><div class="v12-title">🔥 Tu constancia</div><div id="v12StreakText">Completa una sesión para comenzar tu racha.</div></div><div id="v12Big" class="v12-big">0</div></div>
+  </div>
+  <div class="v12-card">
+    <div class="v12-calhead"><button id="v12Prev" type="button">‹</button><div id="v12Month" class="v12-month"></div><button id="v12Next" type="button">›</button></div>
+    <div class="v12-week"><div>L</div><div>M</div><div>X</div><div>J</div><div>V</div><div>S</div><div>D</div></div>
+    <div id="v12Grid" class="v12-grid"></div>
+    <div id="v12Detail" class="v12-detail"></div>
+  </div>
+  <div class="v12-card">
+    <div class="v12-title">📊 Últimos 30 días</div>
+    <div class="v12-bars">
+      <div class="v12-row"><span>Sesiones</span><div class="v12-bar"><div id="v12SessionsBar" class="v12-fill"></div></div><b id="v12Sessions30">0</b></div>
+      <div class="v12-row"><span>Series</span><div class="v12-bar"><div id="v12SetsBar" class="v12-fill"></div></div><b id="v12Sets30">0</b></div>
+      <div class="v12-row"><span>Repeticiones</span><div class="v12-bar"><div id="v12RepsBar" class="v12-fill"></div></div><b id="v12Reps30">0</b></div>
+    </div>
+  </div>
+</section>
+
+<script id="v12-script">
+(() => {
+  let sessions=[], cursor=new Date(); cursor.setDate(1);
+  const $=id=>document.getElementById(id), pad=n=>String(n).padStart(2,'0');
+  const iso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const names=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const dateOf=s=>s.workout_date||s.date||s.started_at?.slice(0,10)||s.created_at?.slice(0,10);
+  function dates(){return [...new Set(sessions.map(dateOf).filter(Boolean))].sort();}
+  function streakInfo(){
+    const ds=dates(), set=new Set(ds), today=new Date(), t=iso(today), y=new Date(today); y.setDate(y.getDate()-1);
+    let cur=0, anchor=set.has(t)?today:(set.has(iso(y))?y:null);
+    if(anchor){let d=new Date(anchor);while(set.has(iso(d))){cur++;d.setDate(d.getDate()-1);}}
+    let best=0,run=0,prev=null;
+    ds.forEach(x=>{let d=new Date(x+'T00:00:00');run=prev&&Math.round((d-prev)/86400000)===1?run+1:1;best=Math.max(best,run);prev=d;});
+    return {cur,best};
+  }
+  function renderStats(){
+    const {cur,best}=streakInfo(), ds=dates(), now=new Date(), from=new Date(now); from.setDate(from.getDate()-29);
+    const recent=sessions.filter(s=>{let d=dateOf(s);return d&&d>=iso(from)&&d<=iso(now)});
+    let sets=0,reps=0;
+    recent.forEach(s=>{sets+=Number(s.total_sets||s.sets_count||0)||0;reps+=Number(s.total_reps||s.reps_count||0)||0;});
+    $('v12Sessions').textContent=ds.length;$('v12Current').textContent=cur;$('v12Best').textContent=best;
+    $('v12Consistency').textContent=Math.round(Math.min(100,recent.length/30*100))+'%';$('v12Big').textContent=cur;
+    $('v12StreakText').textContent=cur?`Llevas ${cur} día${cur===1?'':'s'} consecutivo${cur===1?'':'s'} entrenando.`:'Completa una sesión para comenzar tu racha.';
+    $('v12Sessions30').textContent=recent.length;$('v12Sets30').textContent=sets;$('v12Reps30').textContent=reps;
+    $('v12SessionsBar').style.width=Math.min(100,recent.length/20*100)+'%';$('v12SetsBar').style.width=Math.min(100,sets/200*100)+'%';$('v12RepsBar').style.width=Math.min(100,reps/2000*100)+'%';
+  }
+  function renderCalendar(){
+    const y=cursor.getFullYear(),m=cursor.getMonth(),set=new Set(dates()),grid=$('v12Grid');grid.innerHTML='';
+    $('v12Month').textContent=`${names[m]} ${y}`;
+    const {cur}=streakInfo(), streak=new Set();let a=new Date();
+    if(!set.has(iso(a)))a.setDate(a.getDate()-1);
+    for(let i=0;i<cur;i++){streak.add(iso(a));a.setDate(a.getDate()-1);}
+    let first=new Date(y,m,1).getDay();first=first===0?6:first-1;
+    for(let i=0;i<first;i++){let e=document.createElement('div');e.className='v12-day empty';grid.appendChild(e);}
+    const n=new Date(y,m+1,0).getDate();
+    for(let day=1;day<=n;day++){
+      const d=new Date(y,m,day),key=iso(d),e=document.createElement('div');e.className='v12-day';
+      if(set.has(key))e.classList.add('trained');if(streak.has(key))e.classList.add('streak');if(key===iso(new Date()))e.classList.add('today');
+      e.innerHTML=`<span class="num">${day}</span>${set.has(key)?'<span class="v12-dot"></span>':''}`;
+      if(set.has(key))e.onclick=()=>{const list=sessions.filter(s=>dateOf(s)===key);$('v12Detail').style.display='block';$('v12Detail').innerHTML=`<b>📅 ${key}</b><br>${list.length} sesión${list.length===1?'':'es'} registrada${list.length===1?'':'s'}.`;};
+      grid.appendChild(e);
+    }
+  }
+  async function load(){
+    if(!supabaseClient||!currentAuthUser)return;
+    try{
+      const {data,error}=await supabaseClient.from('workouts').select('*').eq('user_id',currentAuthUser.id).order('workout_date',{ascending:true});
+      if(error)throw error;sessions=data||[];$('v12Dashboard').hidden=false;renderStats();renderCalendar();
+    }catch(e){console.warn('V12 dashboard',e);}
+  }
+  $('v12Prev')?.addEventListener('click',()=>{cursor.setMonth(cursor.getMonth()-1);renderCalendar();});
+  $('v12Next')?.addEventListener('click',()=>{cursor.setMonth(cursor.getMonth()+1);renderCalendar();});
+  window.refreshV12Dashboard=load;
+  setTimeout(load,1200);
+})();
+</script>
+
+<script id="v12-1-ux-script">
+(() => {
+  let sec=0, timer=null;
+  const $=id=>document.getElementById(id);
+  const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+  function render(){ $('v121Timer').textContent=fmt(sec); }
+  function start(){
+    if(timer)return;
+    $('v121TimerStatus').textContent='Descansando…';
+    timer=setInterval(()=>{sec++;render();},1000);
+  }
+  function pause(){
+    if(timer){clearInterval(timer);timer=null;}
+    $('v121TimerStatus').textContent='Cronómetro pausado';
+  }
+  function reset(){
+    if(timer){clearInterval(timer);timer=null;}
+    sec=0;render();$('v121TimerStatus').textContent='Descanso listo para comenzar';
+  }
+  $('v121Start')?.addEventListener('click',start);
+  $('v121Pause')?.addEventListener('click',pause);
+  $('v121Reset')?.addEventListener('click',reset);
+  $('v121Register')?.addEventListener('click',()=>{
+    const reps=Number($('v121Reps').value||0);
+    if(reps<=0){$('v121Reps').focus();return;}
+    // Store the local series/rest snapshot for the current session UI.
+    const key='v121_series_log';
+    let log=[];try{log=JSON.parse(localStorage.getItem(key)||'[]')}catch(e){}
+    log.push({set:Number($('v121Set').value||1),reps,rest_seconds:sec,at:new Date().toISOString()});
+    localStorage.setItem(key,JSON.stringify(log));
+    $('v121Set').value=Number($('v121Set').value||1)+1;
+    $('v121Reps').value='';
+    reset();
+    start();
+  });
+  render();
+})();
+</script>
+
+
+<script id="v13-unified-script">
+(() => {
+  const $=id=>document.getElementById(id);
+  let sec=0,timer=null,dayNumber=1,currentExercise='';
+  const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+  const key='v13_session_series';
+    const exercises={
+    1:[
+      ['Hack Squat','compuesto'],['Press de pecho','compuesto'],['Press inclinado','compuesto'],['Extensión de tríceps','aislamiento'],['Elevación de gemelos','aislamiento']
+    ],
+    2:[
+      ['Jalón al pecho','compuesto'],['Remo','compuesto'],['Curl de bíceps','aislamiento'],['Curl martillo','aislamiento'],['Elevación de gemelos','aislamiento']
+    ],
+    3:[
+      ['Prensa de piernas','compuesto'],['Peso muerto rumano','compuesto'],['Curl femoral','aislamiento'],['Elevación de gemelos sentado','aislamiento'],['Abdominales','aislamiento']
+    ]
+  };
+
+  function dateOf(s){return s.workout_date||s.date||s.started_at?.slice(0,10)||s.created_at?.slice(0,10)}
+  function getHistory(){
+    try{return JSON.parse(localStorage.getItem('v13_workout_days')||'[]')}catch(e){return[]}
+  }
+  function calcDay(){
+    const hist=getHistory().sort();
+    if(!hist.length)return 1;
+    const last=hist[hist.length-1];
+    const lastD=new Date(last+'T00:00:00'), today=new Date(); today.setHours(0,0,0,0);
+    const diff=Math.round((today-lastD)/86400000);
+    if(diff<=0)return Number(localStorage.getItem('v13_last_day')||1);
+    const next=(Number(localStorage.getItem('v13_last_day')||1)%3)+1;
+    return next;
+  }
+  function renderSuggestions(){
+    dayNumber=calcDay(); $('v13DayBadge').textContent=`Día ${dayNumber}`;
+    $('v13SuggestionText').textContent=`Según tu último registro, hoy te sugerimos continuar con el Día ${dayNumber}. Puedes elegir otro ejercicio si lo necesitas.`;
+    const box=$('v13Suggestions');box.innerHTML='';
+    (exercises[dayNumber]||[]).forEach(([name,type])=>{
+      const d=document.createElement('div');d.className='v13-ex';
+      const img=exerciseImages[name];
+      d.innerHTML=`<span class="v132-exercise-info">
+        <img class="v132-exercise-img" src="${img||''}" alt="${name}" loading="lazy"
+             onerror="this.outerHTML='<span class=&quot;v132-exercise-image-fallback&quot;>🏋️</span>'">
+        <span><b>${name}</b><small>Ver ejercicio</small></span>
+      </span><span>›</span>`;
+      d.onclick=()=>selectExercise(name,type,d);box.appendChild(d);
+    });
+  }
+  function selectExercise(name,el){
+    currentExercise=name;$('v13Exercise').value=name;
+    document.querySelectorAll('.v13-ex').forEach(x=>x.classList.remove('active'));el.classList.add('active');renderLog();
+  }
+  function renderLog(){
+    const box=$('v13Log');let arr=[];
+    try{arr=JSON.parse(localStorage.getItem(key)||'[]')}catch(e){}
+    const list=arr.filter(x=>x.exercise===currentExercise);
+    box.innerHTML=list.length?list.map(x=>`<div class="v13-log-row"><b>S${x.set}</b><span>${x.exercise}</span><span>${x.weight?x.weight+' '+x.weightType:'—'}</span><span>${x.reps} reps · ${fmt(x.rest)}</span></div>`).join(''):'<div class="v13-sub">Todavía no has registrado series de este ejercicio.</div>';
+  }
+  function renderTimer(){ $('v13Timer').textContent=fmt(sec); }
+  function start(){if(timer)return;timer=setInterval(()=>{sec++;renderTimer()},1000);$('v13TimerStatus').textContent='Descansando…'}
+  function pause(){if(timer){clearInterval(timer);timer=null}$('v13TimerStatus').textContent='Cronómetro pausado'}
+  function reset(){if(timer){clearInterval(timer);timer=null}sec=0;renderTimer();$('v13TimerStatus').textContent='Listo para registrar'}
+  function register(){
+    const exercise=$('v13Exercise').value.trim(), reps=Number($('v13Reps').value||0), set=Number($('v13Set').value||1);
+    if(!exercise||reps<=0){$('v13Reps').focus();return}
+    let arr=[];try{arr=JSON.parse(localStorage.getItem(key)||'[]')}catch(e){}
+    arr.push({exercise,weight:Number($('v13Weight').value||0),weightType:$('v13WeightType').value,set,reps,rest:sec,day:dayNumber,at:new Date().toISOString()});
+    localStorage.setItem(key,JSON.stringify(arr));
+    localStorage.setItem('v13_last_day',String(dayNumber));
+    const today=new Date();today.setHours(0,0,0,0);const hist=getHistory();const k=today.toISOString().slice(0,10);if(!hist.includes(k))hist.push(k);localStorage.setItem('v13_workout_days',JSON.stringify(hist));
+    $('v13Set').value=set+1;$('v13Reps').value='';renderLog();reset();start();
+    if(typeof window.refreshV12Dashboard==='function')window.refreshV12Dashboard();
+  }
+  $('v13Start')?.addEventListener('click',start);$('v13Pause')?.addEventListener('click',pause);$('v13Reset')?.addEventListener('click',reset);$('v13Register')?.addEventListener('click',register);
+  $('v13Exercise')?.addEventListener('input',e=>{currentExercise=e.target.value;renderLog()});
+  renderSuggestions();renderTimer();
+})();
 </script>
 </body>
 </html>
