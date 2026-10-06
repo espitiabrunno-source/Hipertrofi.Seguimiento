@@ -247,12 +247,12 @@ small{color:var(--muted)}
       <label>Fecha</label><input id="date" type="date">
       <label>Día / sesión</label>
       <select id="day">
-        <option>Dia1 — Pierna + Gemelos</option>
-        <option>Dia2 — Pecho + Hombro + Tríceps</option>
-        <option>Dia3 — Espalda + Bíceps + Gemelos</option>
-        <option>Dia4 — Pierna + Gemelos</option>
-        <option>Dia5 — Torso + Brazos</option>
-        <option>Dia6 — Especialización Bíceps + Gemelos</option>
+        <option>Lunes — Pierna + Gemelos</option>
+        <option>Martes — Pecho + Hombro + Tríceps</option>
+        <option>Miércoles — Espalda + Bíceps + Gemelos</option>
+        <option>Jueves — Pierna + Gemelos</option>
+        <option>Viernes — Torso + Brazos</option>
+        <option>Sábado — Especialización Bíceps + Gemelos</option>
         <option>Otro</option>
       </select>
       <label>Ejercicio</label>
@@ -822,27 +822,28 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
   }
   function calcDay(){
     const hist=getHistory().sort();
-    if(!hist.length)return 1;
+    if(!hist.length) return 1;
     const last=hist[hist.length-1];
-    const lastD=new Date(last+'T00:00:00'), today=new Date(); today.setHours(0,0,0,0);
+    const lastD=new Date(last+'T00:00:00'), today=new Date();
+    today.setHours(0,0,0,0);
     const diff=Math.round((today-lastD)/86400000);
-    if(diff<=0)return Number(localStorage.getItem('v13_last_day')||1);
-    const next=(Number(localStorage.getItem('v13_last_day')||1)%3)+1;
-    return next;
+    if(diff<=0) return Number(localStorage.getItem('v13_last_day')||1);
+    return (Number(localStorage.getItem('v13_last_day')||1)%3)+1;
   }
   function renderSuggestions(){
-    dayNumber=calcDay(); $('v13DayBadge').textContent=`Día ${dayNumber}`;
-    $('v13SuggestionText').textContent=`Según tu último registro, hoy te sugerimos continuar con el Día ${dayNumber}. Puedes elegir otro ejercicio si lo necesitas.`;
-    const box=$('v13Suggestions');box.innerHTML='';
-    (exercises[dayNumber]||[]).forEach(([name,type])=>{
-      const d=document.createElement('div');d.className='v13-ex';
-      const img=exerciseImages[name];
-      d.innerHTML=`<span class="v132-exercise-info">
-        <img class="v132-exercise-img" src="${img||''}" alt="${name}" loading="lazy"
-             onerror="this.outerHTML='<span class=&quot;v132-exercise-image-fallback&quot;>🏋️</span>'">
-        <span><b>${name}</b><small>Ver ejercicio</small></span>
-      </span><span>›</span>`;
-      d.onclick=()=>selectExercise(name,type,d);box.appendChild(d);
+    dayNumber=calcDay();
+    const badge=$('v13DayBadge'), text=$('v13SuggestionText'), box=$('v13Suggestions');
+    if(badge) badge.textContent=`Día ${dayNumber}`;
+    if(text) text.textContent=`Según tu último entrenamiento, hoy te sugerimos continuar con el Día ${dayNumber}.`;
+    if(!box) return;
+    box.innerHTML='';
+    const list=exercises[dayNumber]||[];
+    list.forEach(([name,type])=>{
+      const d=document.createElement('div');
+      d.className='v13-ex';
+      d.innerHTML=`<span><b>${name}</b></span><span>›</span>`;
+      d.addEventListener('click',()=>selectExercise(name,d));
+      box.appendChild(d);
     });
   }
   function selectExercise(name,el){
