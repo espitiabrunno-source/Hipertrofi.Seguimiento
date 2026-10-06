@@ -85,11 +85,11 @@ small{color:var(--muted)}
 
     <div id="verifyPanel" style="display:none">
       <h2>📩 Confirma tu correo</h2>
-      <p>Te enviamos un código de 6 dígitos a tu correo.</p>
-      <label>Código de confirmación</label>
-      <input id="verifyToken" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456">
-      <button class="green auth-main-btn" onclick="verifyEmailCode()">Confirmar correo</button>
-      <button class="secondary auth-link-btn" onclick="resendVerificationCode()">Reenviar código</button>
+      <p>Te enviamos un correo de confirmación a:</p>
+      <p><strong id="verifyEmailLabel"></strong></p>
+      <p class="muted">Abre el correo y pulsa <b>Confirm email address</b>. No necesitas introducir ningún código.</p>
+      <button class="green auth-main-btn" onclick="checkEmailConfirmation()">Ya confirmé mi correo</button>
+      <button class="secondary auth-link-btn" onclick="resendConfirmationEmail()">Reenviar correo de confirmación</button>
       <button class="secondary auth-link-btn" onclick="showLogin()">Volver al inicio</button>
       <div id="verifyMsg" class="auth-msg"></div>
     </div>
@@ -261,8 +261,8 @@ small{color:var(--muted)}
 </main>
 
 <script>
-/* CONTROL DE HIPERTROFIA V10 — Supabase Auth + historial remoto */
-const SUPABASE_URL = "https://glomtdofnkayvwslxqko.supabase.co";
+/* CONTROL DE HIPERTROFIA V11 — Confirmación de correo + historial remoto */
+const SUPABASE_URL = "https://glomtdofnkaywvslxqko.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_uI9eipYEQzweVr9BgWNGAA_drTHHNzZ";
 
 let supabaseClient = null;
@@ -278,7 +278,7 @@ let sessionSets = [];
 let audioContext = null;
 let verificationEmail = "";
 
-const WORKOUT_STATE_KEY = "hipertrofia_sesion_v10";
+const WORKOUT_STATE_KEY = "hipertrofia_sesion_v11";
 
 function authConfigured(){
   return SUPABASE_URL.startsWith("https://") && !SUPABASE_PUBLISHABLE_KEY.includes("PEGA_AQUI");
@@ -294,7 +294,14 @@ function formatDuration(sec){sec=Math.max(0,Math.round(Number(sec)||0));const h=
 
 function showLogin(){document.getElementById("loginPanel").style.display="";document.getElementById("registerPanel").style.display="none";document.getElementById("verifyPanel").style.display="none";}
 function showRegister(){document.getElementById("loginPanel").style.display="none";document.getElementById("registerPanel").style.display="";document.getElementById("verifyPanel").style.display="none";}
-function showVerify(email,msg="Revisa tu correo. Si recibes un enlace, haz clic en él. Si recibes un código de 6 dígitos, escríbelo aquí."){verificationEmail=email;document.getElementById("loginPanel").style.display="none";document.getElementById("registerPanel").style.display="none";document.getElementById("verifyPanel").style.display="";authMessage("verifyMsg",msg,true);setTimeout(()=>document.getElementById("verifyToken")?.focus(),50)}
+function showVerify(email,msg="Revisa tu correo y pulsa el enlace de confirmación."){
+  verificationEmail=email;
+  document.getElementById("loginPanel").style.display="none";
+  document.getElementById("registerPanel").style.display="none";
+  document.getElementById("verifyPanel").style.display="";
+  const label=document.getElementById("verifyEmailLabel"); if(label) label.textContent=email;
+  authMessage("verifyMsg",msg,true);
+}
 
 async function testSupabaseConnection(){
   try{
@@ -314,8 +321,18 @@ async function initAuth(){
     if(error) throw error;
     if(session) await onLoggedIn(session.user); else onLoggedOut();
     supabaseClient.auth.onAuthStateChange(async (event,session)=>{
-      if(session) await onLoggedIn(session.user); else onLoggedOut();
+      if(session){
+        await onLoggedIn(session.user);
+        if(event === "SIGNED_IN" && verificationEmail){
+          authMessage("verifyMsg","Correo confirmado correctamente.",true);
+        }
+      } else onLoggedOut();
     });
+    // When the user returns from the confirmation link, Supabase handles the
+    // session from the URL because detectSessionInUrl is enabled.
+    if(window.location.hash.includes("access_token=")){
+      setTimeout(()=>window.history.replaceState({},document.title,window.location.pathname+window.location.search),1200);
+    }
   }catch(e){
     console.error("Error inicializando Supabase:",e);
     authMessage("loginMsg","No se pudo iniciar la conexión con Supabase. "+(e?.message||String(e)));
@@ -331,41 +348,49 @@ async function registerUser(){
   if(!name||!email||!p||!p2){authMessage("registerMsg","Completa todos los campos.");return;}
   if(p.length<8){authMessage("registerMsg","La contraseña debe tener al menos 8 caracteres.");return;}
   if(p!==p2){authMessage("registerMsg","Las contraseñas no coinciden.");return;}
-  authMessage("registerMsg","Conectando con Supabase…",true);
+  authMessage("registerMsg","Creando tu cuenta…",true);
   try{
+    const redirectTo=window.location.href.split('#')[0];
     const {data,error}=await supabaseClient.auth.signUp({
       email,password:p,
-      options:{data:{display_name:name},emailRedirectTo:window.location.origin+window.location.pathname}
+      options:{data:{display_name:name},emailRedirectTo:redirectTo}
     });
     if(error){authMessage("registerMsg",error.message);return;}
     verificationEmail=email;
     if(data.session){await onLoggedIn(data.user);return;}
-    showVerify(email,"Cuenta creada. Revisa tu correo y confirma la dirección. Si tu plantilla usa un código de 6 dígitos, también puedes introducirlo aquí.");
+    showVerify(email,"Cuenta creada. Revisa tu correo y pulsa el enlace para confirmar tu dirección.");
   }catch(e){
     console.error("Error de registro Supabase:",e);
     const diagnostic=await testSupabaseConnection();
     let msg="No se pudo completar el registro. ";
     if(diagnostic.ok){
-      msg+="Supabase sí responde, pero el registro fue bloqueado. Revisa Authentication → Sign In / Providers → Email y que Confirm email esté configurado.";
+      msg+="Supabase responde, pero el registro fue rechazado. Revisa Authentication → Providers → Email y que Confirm email esté activado.";
     }else{
-      msg+="La página no logra comunicarse con Supabase. "+diagnostic.detail+". Revisa la conexión, bloqueadores del navegador y que el Project URL sea correcto.";
+      msg+="La página no logra comunicarse con Supabase. "+diagnostic.detail;
     }
     authMessage("registerMsg",msg);
   }
 }
 
-async function verifyEmailCode(){
-  const token=document.getElementById("verifyToken").value.trim();
-  if(!verificationEmail||!/^\d{6}$/.test(token)){authMessage("verifyMsg","Introduce el código de 6 dígitos recibido por correo, si tu plantilla utiliza código OTP.");return;}
-  const {data,error}=await supabaseClient.auth.verifyOtp({email:verificationEmail,token,type:"signup"});
-  if(error){authMessage("verifyMsg",error.message);return;}
-  if(data.session) await onLoggedIn(data.user); else authMessage("verifyMsg","Correo confirmado. Ya puedes iniciar sesión.",true);
+async function resendConfirmationEmail(){
+  if(!verificationEmail){authMessage("verifyMsg","No tenemos un correo pendiente de confirmar.");return;}
+  authMessage("verifyMsg","Enviando correo…",true);
+  const {error}=await supabaseClient.auth.resend({type:"signup",email:verificationEmail});
+  if(error) authMessage("verifyMsg",error.message);
+  else authMessage("verifyMsg","Correo de confirmación reenviado. Revisa tu bandeja de entrada y spam.",true);
 }
 
-async function resendVerificationCode(){
-  if(!verificationEmail)return;
-  const {error}=await supabaseClient.auth.resend({type:"signup",email:verificationEmail});
-  if(error) authMessage("verifyMsg",error.message); else authMessage("verifyMsg","Código reenviado. Revisa tu correo.",true);
+async function checkEmailConfirmation(){
+  if(!supabaseClient){authMessage("verifyMsg","Supabase no está conectado.");return;}
+  authMessage("verifyMsg","Comprobando confirmación…",true);
+  const {data,error}=await supabaseClient.auth.getUser();
+  if(error){authMessage("verifyMsg","Todavía no aparece una sesión confirmada. Abre el correo y pulsa el enlace de confirmación. Si ya lo hiciste, intenta iniciar sesión.");return;}
+  if(data?.user?.email_confirmed_at){
+    authMessage("verifyMsg","Correo confirmado correctamente. Ya puedes iniciar sesión.",true);
+    setTimeout(showLogin,700);
+  }else{
+    authMessage("verifyMsg","Todavía no aparece como confirmado. Abre el correo y pulsa el enlace de confirmación.");
+  }
 }
 
 async function loginUser(){
