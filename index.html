@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta name="supabase-project" content="glomtdofnkaywvslxqko">
+<meta name="supabase-project" content="glomtdofnkayvwslxqko">
+<meta name="app-version" content="V11.1">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control de Hipertrofia</title>
@@ -115,12 +116,12 @@ small{color:var(--muted)}
       <label>Fecha</label><input id="date" type="date">
       <label>Día / sesión</label>
       <select id="day">
-        <option>Lunes — Pierna + Gemelos</option>
-        <option>Martes — Pecho + Hombro + Tríceps</option>
-        <option>Miércoles — Espalda + Bíceps + Gemelos</option>
-        <option>Jueves — Pierna + Gemelos</option>
-        <option>Viernes — Torso + Brazos</option>
-        <option>Sábado — Especialización Bíceps + Gemelos</option>
+        <option>Dia1 — Pierna + Gemelos</option>
+        <option>Dia2 — Pecho + Hombro + Tríceps</option>
+        <option>Dia3 — Espalda + Bíceps + Gemelos</option>
+        <option>Dia4 — Pierna + Gemelos</option>
+        <option>Dia5 — Torso + Brazos</option>
+        <option>Dia6 — Especialización Bíceps + Gemelos</option>
         <option>Otro</option>
       </select>
       <label>Ejercicio</label>
@@ -262,7 +263,7 @@ small{color:var(--muted)}
 
 <script>
 /* CONTROL DE HIPERTROFIA V11 — Confirmación de correo + historial remoto */
-const SUPABASE_URL = "https://glomtdofnkaywvslxqko.supabase.co";
+const SUPABASE_URL = "https://glomtdofnkayvwslxqko.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_uI9eipYEQzweVr9BgWNGAA_drTHHNzZ";
 
 let supabaseClient = null;
